@@ -18,7 +18,7 @@ Windows wrapper for [OpenCode](https://github.com/anomalyco/opencode) that fixes
 ### Option 1: Quick Install (PowerShell 7)
 
 ```powershell
-irm https://raw.githubusercontent.com/dhimzikri/oc-wrapper/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/dhimzikri/oc-wrapper/master/install.ps1 | iex
 ```
 
 Then reload your profile:
