@@ -1,0 +1,44 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"syscall"
+)
+
+func main() {
+	kernel32 := syscall.NewLazyDLL("kernel32.dll")
+	procSetConsoleCtrlHandler := kernel32.NewProc("SetConsoleCtrlHandler")
+
+	opencodePath := `C:\Users\08023.dimas\.bun\bin\opencode.exe.real`
+
+	if _, err := os.Stat(opencodePath); os.IsNotExist(err) {
+		if len(os.Args) > 1 {
+			opencodePath = os.Args[1]
+		} else {
+			fmt.Fprintln(os.Stderr, "Usage: opencode-wrapper.exe [opencode_path]")
+			os.Exit(1)
+		}
+	}
+
+	procSetConsoleCtrlHandler.Call(0, 1)
+	defer procSetConsoleCtrlHandler.Call(0, 0)
+
+	cmd := exec.Command(opencodePath, os.Args[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		CreationFlags: 0x00000200,
+	}
+
+	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			os.Exit(exitErr.ExitCode())
+		}
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}
