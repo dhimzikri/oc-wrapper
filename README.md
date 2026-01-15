@@ -1,6 +1,6 @@
 # OpenCode Wrapper
 
-Windows wrapper for [OpenCode](https://github.com/anomalyco/opencode) that fixes terminal issues on Windows/PowerShell.
+Cross-platform wrapper for [OpenCode](https://github.com/anomalyco/opencode) that fixes terminal issues.
 
 ## What it fixes
 
@@ -9,11 +9,13 @@ Windows wrapper for [OpenCode](https://github.com/anomalyco/opencode) that fixes
 
 ## Requirements
 
-- Windows 10/11
+- Windows 10/11 or Linux (Ubuntu/Debian/etc.)
 - Go 1.21+ (for building, or use pre-built binary)
 - OpenCode installed
 
-## Installation
+---
+
+## Windows Installation
 
 ### Option 1: Quick Install (PowerShell 7)
 
@@ -47,54 +49,68 @@ function opencode { & "$env:USERPROFILE\.config\opencode\wrapper\opencode.exe" @
 
 ---
 
+## Linux Installation
+
+### Option 1: Quick Install
+
+```bash
+curl -sSL https://raw.githubusercontent.com/dhimzikri/oc-wrapper/master/install.sh | bash
+```
+
+Then reload your shell:
+```bash
+source ~/.bashrc   # for bash
+source ~/.zshrc    # for zsh
+```
+
+### Option 2: Manual Install
+
+1. Clone and build:
+```bash
+git clone https://github.com/dhimzikri/oc-wrapper.git ~/.config/opencode/wrapper
+cd ~/.config/opencode/wrapper
+GOOS=linux GOARCH=amd64 go build -o opencode main_linux.go
+```
+
+2. Add to shell config (`~/.bashrc` or `~/.zshrc`):
+```bash
+# OpenCode Wrapper
+alias opencode='~/.config/opencode/wrapper/opencode'
+```
+
+3. Reload config:
+```bash
+source ~/.bashrc
+```
+
+---
+
 ## What the installer does
 
-The quick install script performs these actions:
+### Windows (install.ps1)
 
-### 1. Creates installation directory
-```
-%USERPROFILE%\.config\opencode\wrapper\
-```
+1. Creates `%USERPROFILE%\.config\opencode\wrapper\`
+2. Builds or downloads `opencode.exe`
+3. Appends function to `$PROFILE`
 
-### 2. Builds or downloads the wrapper
-- **If Go is installed** → Clones repo to temp, builds `opencode.exe`, cleans up
-- **If Go is NOT installed** → Downloads pre-built binary from GitHub releases
+### Linux (install.sh)
 
-### 3. Modifies PowerShell profile
-**APPENDS** these 2 lines to the END of your `$PROFILE`:
-```powershell
-# OpenCode Wrapper
-function opencode { & "$env:USERPROFILE\.config\opencode\wrapper\opencode.exe" @args }
-```
+1. Creates `~/.config/opencode/wrapper/`
+2. Builds or downloads `opencode`
+3. Appends alias to `~/.bashrc` and/or `~/.zshrc`
 
 ### What is NOT modified:
-- Existing PowerShell profile content (only appends, never replaces)
-- Your OpenCode installation (`~/.bun/bin/opencode.exe`)
+- Existing shell config content (only appends, never replaces)
+- Your OpenCode installation (`~/.bun/bin/opencode`)
 - System PATH
 - Other environment variables
-- Windows PowerShell 5.x profile (only affects PowerShell 7 if you run from pwsh)
 
 ---
 
-## Security & Safety
+## Uninstall
 
-### Before installing
-The installer only modifies your **user-level** PowerShell profile. It does NOT:
-- Require administrator privileges
-- Modify system files
-- Change global PATH
-- Affect other users on the machine
+### Windows
 
-### Backup your profile first (recommended)
-```powershell
-Copy-Item $PROFILE "$PROFILE.backup"
-```
-
----
-
-## Uninstall / Rollback
-
-### Option 1: Automatic uninstall
 ```powershell
 # Remove wrapper files
 Remove-Item -Recurse -Force "$env:USERPROFILE\.config\opencode\wrapper"
@@ -106,73 +122,113 @@ notepad $PROFILE
 #   function opencode { & "$env:USERPROFILE\.config\opencode\wrapper\opencode.exe" @args }
 ```
 
-### Option 2: Restore from backup
-If you backed up your profile before installing:
-```powershell
-Copy-Item "$PROFILE.backup" $PROFILE -Force
-. $PROFILE
+### Linux
+
+```bash
+# Remove wrapper files
+rm -rf ~/.config/opencode/wrapper
+
+# Edit shell config to remove the alias
+nano ~/.bashrc  # or ~/.zshrc
+# Delete these lines:
+#   # OpenCode Wrapper
+#   alias opencode='~/.config/opencode/wrapper/opencode'
 ```
-
-### Option 3: Full profile reset (nuclear option)
-If something goes wrong and PowerShell won't start:
-
-1. Open `cmd.exe` (not PowerShell)
-2. Delete the profile:
-```cmd
-del "%USERPROFILE%\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
-```
-3. Restart PowerShell - it will start fresh without any profile
-
----
-
-## Troubleshooting
-
-### PowerShell won't start after install
-Your profile has a syntax error. Use the "Full profile reset" option above, or edit the profile from cmd.exe:
-```cmd
-notepad "%USERPROFILE%\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
-```
-
-### "opencode.exe not found" error
-The wrapper can't find OpenCode. Either:
-1. Install OpenCode first: `bun install -g opencode`
-2. Or set the path manually:
-```powershell
-$env:OPENCODE_PATH = "C:\path\to\opencode.exe"
-```
-
-### Wrapper installed but `opencode` command not found
-Reload your profile:
-```powershell
-. $PROFILE
-```
-Or restart PowerShell.
 
 ---
 
 ## Configuration
 
-The wrapper auto-detects opencode.exe in this order:
+The wrapper auto-detects opencode in this order:
 
+### Windows
 1. `OPENCODE_PATH` environment variable
-2. `opencode-core.exe` next to wrapper (bundled install)
-3. `~/.bun/bin/opencode.exe` (bun install)
+2. `opencode-core.exe` next to wrapper
+3. `~/.bun/bin/opencode.exe`
 4. `~/.local/bin/opencode.exe`
 5. `~/AppData/Local/Programs/opencode/opencode.exe`
 6. System PATH
 
+### Linux
+1. `OPENCODE_PATH` environment variable
+2. `opencode-core` next to wrapper
+3. `~/.bun/bin/opencode`
+4. `~/.local/bin/opencode`
+5. `/usr/local/bin/opencode`
+6. `/usr/bin/opencode`
+7. System PATH
+
 To override, set `OPENCODE_PATH`:
-```powershell
+```bash
+# Linux
+export OPENCODE_PATH="/custom/path/opencode"
+
+# Windows PowerShell
 $env:OPENCODE_PATH = "C:\custom\path\opencode.exe"
 ```
 
 ---
 
+## Troubleshooting
+
+### "opencode not found" error
+The wrapper can't find OpenCode. Either:
+1. Install OpenCode first: `bun install -g opencode`
+2. Or set the path manually with `OPENCODE_PATH`
+
+### Wrapper installed but `opencode` command not found
+
+**Windows:**
+```powershell
+. $PROFILE
+```
+
+**Linux:**
+```bash
+source ~/.bashrc
+```
+
+Or restart your terminal.
+
+---
+
 ## How it works
 
-- Uses Windows `SetConsoleCtrlHandler` to block Ctrl+C from reaching the TUI
+### Windows
+- Uses `SetConsoleCtrlHandler` to block Ctrl+C from reaching the TUI
 - Creates child process in separate process group (`CREATE_NEW_PROCESS_GROUP`)
-- Resets terminal mouse tracking modes on exit (prevents character leak)
+- Resets terminal mouse tracking modes on exit
+
+### Linux
+- Uses `signal.Ignore(syscall.SIGINT)` to block Ctrl+C
+- Creates child process in separate process group (`Setpgid: true`)
+- Resets terminal mouse tracking modes on exit
+
+---
+
+## Building
+
+### Windows (from Windows)
+```powershell
+go build -o opencode.exe main.go
+```
+
+### Linux (from Linux)
+```bash
+go build -o opencode main_linux.go
+```
+
+### Cross-compile Linux from Windows
+```powershell
+$env:GOOS = "linux"
+$env:GOARCH = "amd64"
+go build -o opencode-wrapper-linux-amd64 main_linux.go
+```
+
+### Cross-compile Windows from Linux
+```bash
+GOOS=windows GOARCH=amd64 go build -o opencode-wrapper-windows-amd64.exe main.go
+```
 
 ---
 
